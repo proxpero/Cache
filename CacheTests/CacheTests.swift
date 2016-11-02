@@ -2,35 +2,43 @@
 //  CacheTests.swift
 //  CacheTests
 //
-//  Created by Todd Olsen on 11/1/16.
+//  Created by Todd Olsen on 11/2/16.
 //
 //
 
 import XCTest
 @testable import Cache
 
+final class Object: NSObject, NSCoding {
+
+    let name: String
+
+    init(with name: String) {
+        self.name = name
+    }
+
+    init?(coder aDecoder: NSCoder) {
+        self.name = aDecoder.decodeObject(forKey: "name") as! String
+    }
+
+    func encode(with aCoder: NSCoder) {
+        aCoder.encodeObject(name, forKey: "name")
+    }
+}
+
+
 class CacheTests: XCTestCase {
-    
-    override func setUp() {
-        super.setUp()
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+
+    func testSaveAndFetch() {
+
+        let object1 = Object(with: "Hello")
+        let cache = Cache(with: "ObjectTest")
+        cache.save(object: object1)
+        let object2 = cache.fetch() as? Object
+
+        XCTAssertNotNil(object2)
+        XCTAssertEqual(object1.name, object2!.name)
+
     }
-    
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-        super.tearDown()
-    }
-    
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-    }
-    
-    func testPerformanceExample() {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
-    
+
 }
