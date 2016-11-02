@@ -8,34 +8,36 @@
 
 import Foundation
 
-public final class Cache {
+public struct Cache {
 
     public let name: String
+    private let directory: FileManager.SearchPathDirectory
 
-    init(with name: String) {
+    public init(with name: String, directory: FileManager.SearchPathDirectory = .cachesDirectory) {
         self.name = name
+        self.directory = directory
     }
 
     private static var _enabled = true
 
-    static func enable() {
+    public static func enable() {
         _enabled = true
     }
 
-    static func disable() {
+    public static func disable() {
         _enabled = false
     }
 
-    var hashedName: String {
-        return String(name.hashValue)
+    private var hashedName: String {
+        return String(UInt64(abs(name.hashValue)))
     }
 
-    var cacheFilename: URL {
-        return URL(fileURLWithPath: hashedName).appendingPathComponent("cache")
+    private var cacheFilename: URL {
+        return URL(fileURLWithPath: String(UInt64(abs(name.hashValue))))
     }
 
-    var appCacheDirectory: URL {
-        let directory = FileManager.SearchPathDirectory.cachesDirectory
+    private var appCacheDirectory: URL {
+        let directory = FileManager.SearchPathDirectory.documentDirectory
         let mask = FileManager.SearchPathDomainMask.userDomainMask
         guard let url = FileManager.default.urls(for: directory, in: mask).first else { fatalError() }
         return url
@@ -43,16 +45,14 @@ public final class Cache {
 
     var cacheLocation: URL {
         return appCacheDirectory
-            .appendingPathComponent(appCacheDirectory.path, isDirectory: true)
-            .appendingPathComponent("caches")
-            .appendingPathComponent(cacheFilename.path)
     }
 
-    func save(object: NSCoding) {
-        NSKeyedArchiver.archiveRootObject(object, toFile: cacheLocation.path)
+    @discardableResult
+    public func save(object: NSCoding) -> Bool {
+        return NSKeyedArchiver.archiveRootObject(object, toFile: cacheLocation.path)
     }
 
-    func fetch() -> NSCoding {
+    public func fetch() -> NSCoding {
         guard let object = NSKeyedUnarchiver.unarchiveObject(withFile: cacheLocation.path) as? NSCoding else { fatalError() }
         return object
     }
